@@ -207,6 +207,86 @@ namespace manofthematch.Core.Controllers.WebAPI
 
         }
 
+        //Only show clubs from specific sports
+        //getClubs?sportsIds=1084&sportsIds=1093
+        [HttpGet]
+        public List<Club> GetClubs([FromUri] int[] sportsIds)
+        {
+            var cs = Services.ContentService;
+            List<Club> clubList = new List<Club>();
+
+            foreach (int sportId in sportsIds)
+            {
+                var content = cs.GetById(sportId).Children();
+                foreach(var club in content)
+                {
+                    var c = new Club();
+                    c.clubId = club.Id;
+                    c.clubName = club.Name;
+                    clubList.Add(c);
+                }              
+            }
+            return clubList;
+        }
+
+        [HttpGet]
+        public List<Sport> GetSports()
+        {
+            var cs = Services.ContentService;
+            var content = cs.GetById(1082).Children();
+
+            List<Sport> clubList = new List<Sport>();
+
+            foreach(var sport in content)
+            {
+                var s = new Sport();
+                s.sportId = sport.Id;
+                s.sportName = (sport.Properties["namesport"].Value != null) ? sport.Properties["namesport"].Value.ToString() : "No name";
+                clubList.Add(s);
+            }
+
+            return clubList;
+        }
+
+        //umbraco/oauth/token
+        //Get token first then /umbraco/Api/postsapi/postmatch
+        [Umbraco.Web.WebApi.UmbracoAuthorize]
+        [HttpPost]
+        public NewMatch PostMatch([FromBody] NewMatch nm)
+        {
+            var cs = Services.ContentService;
+            var newMatch = cs.CreateContent(nm.Opponent, nm.TeamId, "matchItem");
+            cs.SaveAndPublishWithStatus(newMatch);
+            
+
+            NewMatch team = new NewMatch
+            {
+                TeamId = nm.TeamId,
+                Opponent = nm.Opponent
+            };
+           
+            return team;
+        }
+
+        public class Club
+        {
+            public string clubName { set; get; }
+            public int clubId { get; set; }
+        }
+
+        public class Sport
+        {
+            public string sportName { set; get; }
+            public int sportId { get; set; }
+        }
+
+        public class NewMatch
+        {
+            public int TeamId { set; get; }
+            public string Opponent { set; get; }
+
+        }
+
         public class result
         {
             public int Id { get; set; }
