@@ -207,6 +207,31 @@ namespace manofthematch.Core.Controllers.WebAPI
 
         }
 
+        [Umbraco.Web.WebApi.UmbracoAuthorize]
+        [HttpPost]
+        public NewMatch PostMatch([FromBody] NewMatch nm)
+        {
+            var cs = Services.ContentService;
+            var newMatch = cs.CreateContent(nm.Opponent, nm.TeamId, "matchItem");
+            cs.SaveAndPublishWithStatus(newMatch);
+            
+
+            NewMatch team = new NewMatch
+            {
+                TeamId = nm.TeamId,
+                Opponent = nm.Opponent
+            };
+           
+            return team;
+        }
+
+        public class NewMatch
+        {
+            public int TeamId { set; get; }
+            public string Opponent { set; get; }
+
+        }
+
         public class result
         {
             public int Id { get; set; }
