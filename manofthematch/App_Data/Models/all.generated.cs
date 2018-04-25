@@ -8,7 +8,7 @@ using  Umbraco.Web;
 using  Umbraco.ModelsBuilder;
 using  Umbraco.ModelsBuilder.Umbraco;
 [assembly: PureLiveAssembly]
-[assembly:ModelsBuilderAssembly(PureLive = true, SourceHash = "ec9764b692a18121")]
+[assembly:ModelsBuilderAssembly(PureLive = true, SourceHash = "8dda3078957b2f99")]
 [assembly:System.Reflection.AssemblyVersion("0.0.0.1")]
 
 
@@ -63,6 +63,33 @@ namespace Umbraco.Web.PublishedContentModels
 		public static PublishedPropertyType GetModelPropertyType<TValue>(Expression<Func<Club, TValue>> selector)
 		{
 			return PublishedContentModelUtility.GetModelPropertyType(GetModelContentType(), selector);
+		}
+
+		///<summary>
+		/// About
+		///</summary>
+		[ImplementPropertyType("aboutclub")]
+		public string Aboutclub
+		{
+			get { return this.GetPropertyValue<string>("aboutclub"); }
+		}
+
+		///<summary>
+		/// Club name
+		///</summary>
+		[ImplementPropertyType("clubName")]
+		public string ClubName
+		{
+			get { return this.GetPropertyValue<string>("clubName"); }
+		}
+
+		///<summary>
+		/// Picture
+		///</summary>
+		[ImplementPropertyType("pictureclub")]
+		public IPublishedContent Pictureclub
+		{
+			get { return this.GetPropertyValue<IPublishedContent>("pictureclub"); }
 		}
 	}
 
@@ -328,7 +355,7 @@ namespace Umbraco.Web.PublishedContentModels
 		}
 
 		///<summary>
-		/// imagesport
+		/// Image
 		///</summary>
 		[ImplementPropertyType("imagepost")]
 		public IPublishedContent Imagepost
@@ -337,7 +364,7 @@ namespace Umbraco.Web.PublishedContentModels
 		}
 
 		///<summary>
-		/// namesport
+		/// Name
 		///</summary>
 		[ImplementPropertyType("namesport")]
 		public string Namesport

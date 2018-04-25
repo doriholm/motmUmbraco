@@ -125,10 +125,10 @@ namespace manofthematch.Core.Controllers.WebAPI
                             
 
 
-                            if (item4.ContentType.Alias == "matches") {                 //if matches get selected players and compare
+                            if (item4.ContentType.Alias == "Matches") {                 //if matches get selected players and compare
                                 foreach (var item6 in matches)
                                 {
-                                    var playerpick = item6.GetValue<string>("playerpicker");
+                                    var playerpick = item6.GetValue<string>("playerPicker");
                                     string[] tokens = playerpick.Split(',');
                                     List<string> token = new List<string> { };
                                     foreach (var item7 in tokens)
@@ -207,6 +207,97 @@ namespace manofthematch.Core.Controllers.WebAPI
 
         }
 
+        [HttpGet]
+        public SingleClub GetSingleClub(int clubId)
+        {
+            var cs = Services.ContentService;
+            var club = cs.GetById(clubId);
+            var teams = cs.GetById(clubId).Children().Where(t => t.ContentType.Alias.Equals("clubItem"));          
+            List<Team> teamList = new List<Team>();
+
+            var c = new SingleClub();
+            c.clubId = club.Id;
+            c.clubName = club.Name;
+
+            if(teams != null)
+            {
+                foreach(var team in teams)
+                {
+                    var t = new Team();
+                    t.teamId = team.Id;
+                    t.teamName = team.Name;
+                    
+                    List<Match> matchList = new List<Match>();
+                    List<Player> playerList = new List<Player>();
+                    List<Player> matchPlayersList = new List<Player>();
+
+                    var matches = cs.GetById(team.Id).Descendants().Where(m => m.ContentType.Alias.Equals("matchItem"));
+                    var players = cs.GetById(team.Id).Descendants().Where(p => p.ContentType.Alias.Equals("playerItem"));
+
+                    if (players != null)
+                    {
+                        foreach (var player in players)
+                        {
+                            var p = new Player();
+                            p.playerId = player.Id;
+                            p.playerName = player.Name;
+                            var playerGuid = player.Key.ToString();
+                            p.playerGuid = playerGuid.Replace("-", string.Empty);
+                            playerList.Add(p);
+                        }
+
+                    }
+
+                    if (matches != null)
+                    {
+                        foreach(var match in matches)
+                        {
+                            var m = new Match();
+                            m.matchId = match.Id;
+                            m.matchName = match.Name;
+                            //Format DateTime
+                            m.startDate = match.GetValue<DateTime>("startDate");
+
+                            var playerpick = match.GetValue<string>("playerPicker");
+                            string[] tokens = playerpick.Split(',');
+                            List<string> token = new List<string> { };
+                            foreach (var player in tokens)
+                            {
+                                var player2 = player.Replace("umb://document/", "");
+                                token.Add(player2);
+                            }
+                            //m.players = token;
+
+                            foreach(var player in token)
+                            {
+
+                                var playerExist = playerList.Find(x => x.playerGuid == player);
+                               
+                                var p = new Player();
+                                p.playerId = playerExist.playerId;
+                                p.playerName = playerExist.playerName;
+                                p.playerGuid = playerExist.playerGuid;
+                                matchPlayersList.Add(p);
+
+                               
+                            }
+                            m.players = matchPlayersList;
+                            matchList.Add(m);
+                        }
+
+                    }
+                   
+
+                    t.players = playerList;
+                    t.matches = matchList;
+                    teamList.Add(t);
+
+                }
+            }
+            c.teams = teamList;
+            return c;
+        }
+
         //Only show clubs from specific sports
         //getClubs?sportsIds=1084&sportsIds=1093
         [HttpGet]
@@ -268,6 +359,44 @@ namespace manofthematch.Core.Controllers.WebAPI
             return team;
         }
 
+       
+
+        // models for API reguests
+        // - - - - - - - - - - - -
+        public class SingleClub
+        {
+            public string clubName { set; get; }
+            public int clubId { set; get; }
+            public List<Team> teams { set; get; }
+        }
+
+        public class Team
+        {
+            public string teamName { set; get; }
+            public int teamId { set; get; }
+            public List<Match> matches { set; get; }
+            public List<Player> players { set; get; }
+        }
+
+        public class Match
+        {
+            public int matchId { set; get; }
+            public string matchName { set; get; }
+            public DateTime startDate { set; get; }
+            //public string opponent { set; get; }
+            public List<Player> players { set; get; }
+            //public List<string> players { set; get; }
+        }
+
+        public class Player
+        {
+            public string playerName { set; get; }
+            public int playerId { set; get; }
+            public string playerGuid { set; get; }
+        }
+
+        
+        //Displaying all clubs
         public class Club
         {
             public string clubName { set; get; }
@@ -284,16 +413,13 @@ namespace manofthematch.Core.Controllers.WebAPI
         {
             public int TeamId { set; get; }
             public string Opponent { set; get; }
-
         }
 
         public class result
         {
             public int Id { get; set; }
             public string key { get; set; }
-
             public object Name { get; set; }
-
         }
     }
 }
