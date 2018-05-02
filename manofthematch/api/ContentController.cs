@@ -11,6 +11,7 @@ using Umbraco.Core.Models;
 using Umbraco.Core;
 using Umbraco.Web;
 using umbraco;
+using Terratype.Models;
 
 namespace manofthematch.Core.Controllers.WebAPI
 {
@@ -207,30 +208,42 @@ namespace manofthematch.Core.Controllers.WebAPI
 
 
         }
-
+      public string getpicture(IContent page, string property)
+        {
+            var umbHelper = new UmbracoHelper(UmbracoContext.Current);
+            var j2 = page.GetValue<Udi>(property);
+            var smt2 = Umbraco.GetIdForUdi(j2);
+            var k2 = umbHelper.Media(smt2);
+            return k2.Url;
+        }
         [HttpGet]
         public SingleClub GetSingleClub(int clubId)
         {
+            var umbHelper = new UmbracoHelper(UmbracoContext.Current);
             var cs = Services.ContentService;
             var club = cs.GetById(clubId);
             var teams = cs.GetById(clubId).Children().Where(t => t.ContentType.Alias.Equals("clubItem"));
-            List<Team> teamList = new List<Team>();
-
+            List<Team> teamList = new List<Team>();             
+           
             var c = new SingleClub();
             c.clubId = club.Id;
-            c.clubName = club.Name;
-
+            c.clubName = "";
+            c.clubName = (club.GetValue("clubName") != null) ? club.GetValue("clubName").ToString() : ""; 
+            c.clubabout = (club.GetValue("aboutclub") != null) ? club.GetValue("aboutclub").ToString() : ""; 
+            c.Sponsor = (club.GetValue("sponsorPick") != null) ? umbraco.library.GetPreValueAsString(int.Parse(club.GetValue("sponsorPick").ToString())) : "";
+            c.clubPic = getpicture(club, "clublogo");
+            c.stadiumPic = getpicture(club, "stadiumPic");
             if (teams != null)
             {
                 foreach (var team in teams)
                 {
                     var t = new Team();
                     t.teamId = team.Id;
-                    t.teamName = team.Name;
-
+                    t.teamName = (team.GetValue("nameTeam") != null)? team.GetValue("nameTeam").ToString(): "";
+                   
                     List<Match> matchList = new List<Match>();
                     List<Player> playerList = new List<Player>();
-                    List<Player> matchPlayersList = new List<Player>();
+                   
 
                     var matches = cs.GetById(team.Id).Descendants().Where(m => m.ContentType.Alias.Equals("matchItem"));
                     var players = cs.GetById(team.Id).Descendants().Where(p => p.ContentType.Alias.Equals("playerItem"));
@@ -241,7 +254,7 @@ namespace manofthematch.Core.Controllers.WebAPI
                         {
                             var p = new Player();
                             p.playerId = player.Id;
-                            p.playerName = player.Name;
+                            p.playerName = (player.GetValue("namePlayer") != null) ? player.GetValue("namePlayer").ToString() : "";
                             var playerGuid = player.Key.ToString();
                             p.playerGuid = playerGuid.Replace("-", string.Empty);
                             playerList.Add(p);
@@ -255,11 +268,18 @@ namespace manofthematch.Core.Controllers.WebAPI
                         {
                             var m = new Match();
                             m.matchId = match.Id;
-                            m.matchName = match.Name;
+                            m.matchName = (match.GetValue("matchName") != null) ? match.GetValue("matchName").ToString() : ""; ;
                             //Format DateTime
                             m.startDate = match.GetValue<DateTime>("startDate");
-
-                            var playerpick = match.GetValue<string>("playerPicker");
+                            //location part
+                           
+                            var location = match.GetValue("locationPost").ToString();
+                            string[] tok = location.Split(new string[] { "\"datum\": \"" }, StringSplitOptions.None);
+                            string[] tok2 = tok[1].Split(new string[] { "\"\r\n  }\r\n" }, StringSplitOptions.None);
+                            string[] gps = tok2[0].Split(',');
+                            m.location = gps;
+                            var playerpick = (match.GetValue<string>("playerPicker") != null) ? match.GetValue<string>("playerPicker").ToString() : "";
+                            
                             string[] tokens = playerpick.Split(',');
                             List<string> token = new List<string> { };
                             foreach (var player in tokens)
@@ -267,20 +287,22 @@ namespace manofthematch.Core.Controllers.WebAPI
                                 var player2 = player.Replace("umb://document/", "");
                                 token.Add(player2);
                             }
-                            //m.players = token;
-
-                            foreach (var player in token)
+                         
+                            List<Player> matchPlayersList = new List<Player>();
+                            if (token[0] !=  "" )
                             {
+                                foreach (var player in token)
+                                {
+                                    var playerExist = playerList.Find(x => x.playerGuid == player);
 
-                                var playerExist = playerList.Find(x => x.playerGuid == player);
-
-                                var p = new Player();
-                                p.playerId = playerExist.playerId;
-                                p.playerName = playerExist.playerName;
-                                p.playerGuid = playerExist.playerGuid;
-                                matchPlayersList.Add(p);
+                                    var p = new Player();
+                                    p.playerId = playerExist.playerId;
+                                    p.playerName = playerExist.playerName;
+                                    p.playerGuid = playerExist.playerGuid;
+                                    matchPlayersList.Add(p);
 
 
+                                }
                             }
                             m.players = matchPlayersList;
                             matchList.Add(m);
@@ -298,6 +320,7 @@ namespace manofthematch.Core.Controllers.WebAPI
             c.teams = teamList;
             return c;
         }
+       
 
         //Only show clubs from specific sports
         //getClubs?sportsIds=1084&sportsIds=1093
@@ -359,19 +382,19 @@ namespace manofthematch.Core.Controllers.WebAPI
 
             return team;
         }
+      
         [HttpGet]
         public object PlayerVote(int PlayerId)
         {
             var contentService = ApplicationContext.Current.Services.ContentService;
             var content = contentService.GetById(PlayerId);
             var item = content.GetValue<int>("votingScore");
-           
+
             content.SetValue("votingScore", item = item + 1);
-            
-           var smth =  contentService.SaveAndPublishWithStatus(content);
+
+            var smth = contentService.SaveAndPublishWithStatus(content);
             return smth;
         }
-
 
         // models for API reguests
         // - - - - - - - - - - - -
@@ -379,6 +402,10 @@ namespace manofthematch.Core.Controllers.WebAPI
         {
             public string clubName { set; get; }
             public int clubId { set; get; }
+            public string clubPic { set; get; }
+            public string stadiumPic { set; get; }
+            public object Sponsor { set; get; }
+            public string clubabout { set; get; }
             public List<Team> teams { set; get; }
         }
 
@@ -395,9 +422,12 @@ namespace manofthematch.Core.Controllers.WebAPI
             public int matchId { set; get; }
             public string matchName { set; get; }
             public DateTime startDate { set; get; }
+            public string[] location { set; get; }
             //public string opponent { set; get; }
             public List<Player> players { set; get; }
             //public List<string> players { set; get; }
+        
+            
         }
 
         public class Player

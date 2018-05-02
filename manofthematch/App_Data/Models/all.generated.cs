@@ -8,7 +8,7 @@ using  Umbraco.Web;
 using  Umbraco.ModelsBuilder;
 using  Umbraco.ModelsBuilder.Umbraco;
 [assembly: PureLiveAssembly]
-[assembly:ModelsBuilderAssembly(PureLive = true, SourceHash = "8dda3078957b2f99")]
+[assembly:ModelsBuilderAssembly(PureLive = true, SourceHash = "23d82b4b9d43c4fa")]
 [assembly:System.Reflection.AssemblyVersion("0.0.0.1")]
 
 
@@ -75,6 +75,15 @@ namespace Umbraco.Web.PublishedContentModels
 		}
 
 		///<summary>
+		/// Logo
+		///</summary>
+		[ImplementPropertyType("clublogo")]
+		public IPublishedContent Clublogo
+		{
+			get { return this.GetPropertyValue<IPublishedContent>("clublogo"); }
+		}
+
+		///<summary>
 		/// Club name
 		///</summary>
 		[ImplementPropertyType("clubName")]
@@ -84,12 +93,21 @@ namespace Umbraco.Web.PublishedContentModels
 		}
 
 		///<summary>
-		/// Picture
+		/// Sponsor
 		///</summary>
-		[ImplementPropertyType("pictureclub")]
-		public IPublishedContent Pictureclub
+		[ImplementPropertyType("sponsorPick")]
+		public object SponsorPick
 		{
-			get { return this.GetPropertyValue<IPublishedContent>("pictureclub"); }
+			get { return this.GetPropertyValue("sponsorPick"); }
+		}
+
+		///<summary>
+		/// Stadium
+		///</summary>
+		[ImplementPropertyType("stadiumPic")]
+		public IPublishedContent StadiumPic
+		{
+			get { return this.GetPropertyValue<IPublishedContent>("stadiumPic"); }
 		}
 	}
 
@@ -264,6 +282,24 @@ namespace Umbraco.Web.PublishedContentModels
 		public DateTime EndDate
 		{
 			get { return this.GetPropertyValue<DateTime>("endDate"); }
+		}
+
+		///<summary>
+		/// LocationPost
+		///</summary>
+		[ImplementPropertyType("locationPost")]
+		public Terratype.Models.Model LocationPost
+		{
+			get { return this.GetPropertyValue<Terratype.Models.Model>("locationPost"); }
+		}
+
+		///<summary>
+		/// Match Name
+		///</summary>
+		[ImplementPropertyType("matchName")]
+		public string MatchName
+		{
+			get { return this.GetPropertyValue<string>("matchName"); }
 		}
 
 		///<summary>

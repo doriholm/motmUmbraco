@@ -777,3 +777,5 @@ G:\motmUmbraco\manofthematch\bin\Umbraco.RestApi.pdb
 G:\motmUmbraco\manofthematch\bin\Umbraco.Web.UI.xml
 G:\motmUmbraco\manofthematch\bin\UmbracoExamine.xml
 G:\motmUmbraco\manofthematch\bin\WebApi.Hal.pdb
+G:\motmUmbraco\manofthematch\bin\Terratype.dll
+G:\motmUmbraco\manofthematch\bin\Terratype.GoogleMapsV3.dll
