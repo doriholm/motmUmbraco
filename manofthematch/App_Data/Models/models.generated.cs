@@ -19,8 +19,8 @@ using Umbraco.ModelsBuilder;
 using Umbraco.ModelsBuilder.Umbraco;
 
 [assembly: PureLiveAssembly]
-[assembly:ModelsBuilderAssembly(PureLive = true, SourceHash = "23d82b4b9d43c4fa")]
-[assembly:System.Reflection.AssemblyVersion("0.0.0.4")]
+[assembly:ModelsBuilderAssembly(PureLive = true, SourceHash = "748dbeecbd677bad")]
+[assembly:System.Reflection.AssemblyVersion("0.0.0.1")]
 
 namespace Umbraco.Web.PublishedContentModels
 {
@@ -74,6 +74,15 @@ namespace Umbraco.Web.PublishedContentModels
 		public string ClubName
 		{
 			get { return this.GetPropertyValue<string>("clubName"); }
+		}
+
+		///<summary>
+		/// Home city: Write your club home city
+		///</summary>
+		[ImplementPropertyType("homeCity")]
+		public string HomeCity
+		{
+			get { return this.GetPropertyValue<string>("homeCity"); }
 		}
 
 		///<summary>

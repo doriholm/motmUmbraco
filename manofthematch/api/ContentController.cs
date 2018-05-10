@@ -227,7 +227,6 @@ namespace manofthematch.Core.Controllers.WebAPI
            
             var c = new SingleClub();
             c.clubId = club.Id;
-            c.clubName = "";
             c.clubName = (club.GetValue("clubName") != null) ? club.GetValue("clubName").ToString() : ""; 
             c.clubabout = (club.GetValue("aboutclub") != null) ? club.GetValue("aboutclub").ToString() : ""; 
             c.Sponsor = (club.GetValue("sponsorPick") != null) ? umbraco.library.GetPreValueAsString(int.Parse(club.GetValue("sponsorPick").ToString())) : "";
@@ -324,7 +323,7 @@ namespace manofthematch.Core.Controllers.WebAPI
 
         //Only show clubs from specific sports
         //getClubs?sportsIds=1084&sportsIds=1093
-        [HttpGet]
+        [HttpGet] // name clubhomecity picture, stadium picture id
         public List<Club> GetClubs([FromUri] int[] sportsIds)
         {
             var cs = Services.ContentService;
@@ -336,12 +335,89 @@ namespace manofthematch.Core.Controllers.WebAPI
                 foreach (var club in content)
                 {
                     var c = new Club();
+                    c.clubName = (club.GetValue("clubName") != null) ? club.GetValue("clubName").ToString() : "";
+                    c.Sponsor = (club.GetValue("sponsorPick") != null) ? umbraco.library.GetPreValueAsString(int.Parse(club.GetValue("sponsorPick").ToString())) : "";
+                    c.clubPic = getpicture(club, "clublogo");
+                    c.stadiumPic = getpicture(club, "stadiumPic");
                     c.clubId = club.Id;
-                    c.clubName = club.Name;
+                    c.Homecity = (club.GetValue("homeCity") != null) ? club.GetValue("homeCity").ToString() : "";
                     clubList.Add(c);
                 }
             }
             return clubList;
+        }
+        [HttpGet] 
+        public Club GetClub(int sportsId)
+        {
+            var cs = Services.ContentService;
+            Club clubList = new Club();
+                var content = cs.GetById(sportsId).Children();
+                foreach (var club in content)
+                {
+                    var c = new Club();
+                    clubList.clubName = (club.GetValue("clubName") != null) ? club.GetValue("clubName").ToString() : "";
+                clubList.Sponsor = (club.GetValue("sponsorPick") != null) ? umbraco.library.GetPreValueAsString(int.Parse(club.GetValue("sponsorPick").ToString())) : "";
+                clubList.clubPic = getpicture(club, "clublogo");
+                clubList.stadiumPic = getpicture(club, "stadiumPic");
+                clubList.clubId = club.Id;
+                clubList.Homecity = (club.GetValue("homeCity") != null) ? club.GetValue("homeCity").ToString() : "";
+                   
+                }
+            
+            return clubList;
+        }
+        //  get all matches club id match id, club logo,club name, end date, start date, opponent, location
+        [HttpGet] 
+        public List<allmatches> Getmatches([FromUri] int[] sportids)
+        {
+            var cs = Services.ContentService;
+            List<allmatches> matchlist = new List<allmatches>();
+
+            foreach (int sportid in sportids)
+            {
+                var content = cs.GetById(sportid).Children();
+                foreach (var club1 in content)
+                {
+                    var c = new allmatches();
+                    //var clubs = GetClub(club1.Id);
+                    var club = GetSingleClub(club1.Id);
+                    c.clubid = club.clubId;
+                    c.clublogo = club.clubPic;
+                    c.clubname = club.clubName;
+                    c.matches = new List<Match>();
+                    foreach (var item in club.teams)
+                    {
+
+                        foreach (var match in item.matches)
+                        {
+                          
+                                var matche = new Match();
+                                matche.matchId = match.matchId;
+                                matche.matchName = match.matchName;
+                                matche.location = match.location;
+                                matche.startDate = match.startDate;
+                                matche.players = match.players;
+                                c.matches.Add(matche);
+                            
+                        }
+                    }
+
+
+                    matchlist.Add(c);
+                }
+                //foreach (var club in content)
+                //{
+                //    var c = new Club();
+                //    c.clubName = (club.GetValue("clubName") != null) ? club.GetValue("clubName").ToString() : "";
+                //    c.Sponsor = (club.GetValue("sponsorPick") != null) ? umbraco.library.GetPreValueAsString(int.Parse(club.GetValue("sponsorPick").ToString())) : "";
+                //    c.clubPic = getpicture(club, "clublogo");
+                //    c.stadiumPic = getpicture(club, "stadiumPic");
+                //    c.clubId = club.Id;
+                //    c.Homecity = (club.GetValue("homeCity") != null) ? club.GetValue("homeCity").ToString() : "";
+                //    clubList.Add(c);
+                //}
+            }
+            return matchlist;
         }
 
         [HttpGet]
@@ -382,7 +458,7 @@ namespace manofthematch.Core.Controllers.WebAPI
 
             return team;
         }
-      
+        // /umbraco/Api/postsapi/playervote?playerid=1090
         [HttpGet]
         public object PlayerVote(int PlayerId)
         {
@@ -395,9 +471,11 @@ namespace manofthematch.Core.Controllers.WebAPI
             var smth = contentService.SaveAndPublishWithStatus(content);
             return smth;
         }
-
-        // models for API reguests
+        //reset the players  property to match motm 
+        //end date for a match
+        //models for API reguests
         // - - - - - - - - - - - -
+        
         public class SingleClub
         {
             public string clubName { set; get; }
@@ -417,6 +495,19 @@ namespace manofthematch.Core.Controllers.WebAPI
             public List<Player> players { set; get; }
         }
 
+
+        public class allmatches
+        {
+            public int clubid { set; get; }
+            public string clublogo { set; get; }
+            public string clubname { set; get; }
+            public List<Match> matches { set; get; }
+            //public string opponent { set; get; }
+           
+            //public List<string> players { set; get; }
+
+
+        }
         public class Match
         {
             public int matchId { set; get; }
@@ -426,8 +517,8 @@ namespace manofthematch.Core.Controllers.WebAPI
             //public string opponent { set; get; }
             public List<Player> players { set; get; }
             //public List<string> players { set; get; }
-        
-            
+
+
         }
 
         public class Player
@@ -441,8 +532,13 @@ namespace manofthematch.Core.Controllers.WebAPI
         //Displaying all clubs
         public class Club
         {
+        
             public string clubName { set; get; }
-            public int clubId { get; set; }
+            public int clubId { set; get; }
+            public string clubPic { set; get; }
+            public string stadiumPic { set; get; }
+            public string Sponsor { set; get; }
+            public string Homecity { get; set; }
         }
 
         public class Sport
