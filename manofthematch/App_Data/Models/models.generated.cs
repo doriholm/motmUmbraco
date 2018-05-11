@@ -19,8 +19,8 @@ using Umbraco.ModelsBuilder;
 using Umbraco.ModelsBuilder.Umbraco;
 
 [assembly: PureLiveAssembly]
-[assembly:ModelsBuilderAssembly(PureLive = true, SourceHash = "748dbeecbd677bad")]
-[assembly:System.Reflection.AssemblyVersion("0.0.0.1")]
+[assembly:ModelsBuilderAssembly(PureLive = true, SourceHash = "1f10605679b93fc4")]
+[assembly:System.Reflection.AssemblyVersion("0.0.0.2")]
 
 namespace Umbraco.Web.PublishedContentModels
 {
@@ -296,6 +296,24 @@ namespace Umbraco.Web.PublishedContentModels
 		}
 
 		///<summary>
+		/// Match Winner
+		///</summary>
+		[ImplementPropertyType("matchWinner")]
+		public int MatchWinner
+		{
+			get { return this.GetPropertyValue<int>("matchWinner"); }
+		}
+
+		///<summary>
+		/// Opponent
+		///</summary>
+		[ImplementPropertyType("opponentMatch")]
+		public string OpponentMatch
+		{
+			get { return this.GetPropertyValue<string>("opponentMatch"); }
+		}
+
+		///<summary>
 		/// Player picker
 		///</summary>
 		[ImplementPropertyType("playerPicker")]
@@ -346,6 +364,15 @@ namespace Umbraco.Web.PublishedContentModels
 		public string NamePlayer
 		{
 			get { return this.GetPropertyValue<string>("namePlayer"); }
+		}
+
+		///<summary>
+		/// Trophies
+		///</summary>
+		[ImplementPropertyType("trophiesWon")]
+		public int TrophiesWon
+		{
+			get { return this.GetPropertyValue<int>("trophiesWon"); }
 		}
 
 		///<summary>

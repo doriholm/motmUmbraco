@@ -12,203 +12,13 @@ using Umbraco.Core;
 using Umbraco.Web;
 using umbraco;
 using Terratype.Models;
-
+ // add opponent logo in match documents
 namespace manofthematch.Core.Controllers.WebAPI
 {
     [Route("api/[controller]")]
     public class PostsApiController : UmbracoApiController
     {
-        [HttpGet]
-        public string Test()
-        {
-            //creating an object from result class
-            result result = new result();
-            var cs = Services.ContentService;
-            // getting children of sports
-            var content = cs.GetChildren(1082);
-
-            dynamic obj = new JObject();
-            var objplayer = new JObject
-            {
-                { "player", new JObject {
-                    { "playerguid", "" },
-                    { "playerid", "" },
-                    { "playername", "" }
-                }
-                }
-            };
-            int i = 0;
-            int i2 = 0;
-            int i3 = 0;
-            int i4 = 0;
-            int i5 = 0;
-            int i6 = 0;
-            int i7 = 0;
-            foreach (var item in content)
-            {
-                var j = item.GetValue<Udi>("imagepost");
-                var smt = Umbraco.GetIdForUdi(j);
-                var umbHelper = new UmbracoHelper(UmbracoContext.Current);
-                var k = umbHelper.Media(smt);
-                obj["sport" + i] = new JObject
-                {
-                    { "SportName", item.GetValue<string>("namesport")  },
-                    { "SportPic", k.Url },
-                    { "clubs" , new JObject {} }
-
-                };
-                var content2 = cs.GetChildren(item.Id); // getting clubs
-
-                foreach (var item2 in content2)
-                {
-                    obj["sport" + i]["clubs"]["club" + i2] = new JObject
-                 {
-                     { "ClubName", item2.GetValue<string>("clubName") },
-                     { "teams" , new JObject { } }
-                 };
-                    var content3 = cs.GetChildren(item2.Id);
-                    foreach (var item3 in content3)  //getting teams
-                    {
-                        var j1 = item3.GetValue<Udi>("imageTeam");
-                        var smt1 = Umbraco.GetIdForUdi(j1);
-
-                        var k1 = umbHelper.Media(smt1);
-
-
-                        obj["sport" + i]["clubs"]["club" + i2]["teams"]["team" + i3] = new JObject
-                        {
-                        { "teamName", item3.GetValue<string>("nameTeam") },
-                            { "teamPic", k1.Url },
-                            { "matches" , new JObject{} }
-
-                        };
-
-                        var children = cs.GetChildren(item3.Id);            //getting 2nodes from teams
-                        foreach (var item4 in children)
-                        {
-                            var matches = cs.GetChildren(item4.Id);
-                            if (item4.ContentType.Alias == "players")           //if players get all players and store in array
-                            {
-                                var playerchildren = item4.Id;
-                                var playerall = cs.GetChildren(playerchildren);
-
-                                foreach (var item5 in playerall)
-                                {
-                                    var key = item5.Key.ToString();
-                                    key = key.Replace("umb://document/", "");
-                                    key = key.Replace("-", "");
-                                    if (i6 == 0)
-                                    {
-                                        objplayer["player"] = new JObject
-                                    {
-                                        { "playerid", item5.Id },
-                                        { "playerguid", key },
-                                        { "playername", item5.GetValue<string>("namePlayer") }
-                                    };
-                                    }
-                                    else
-                                    {
-
-                                        objplayer["player" + item5.Id] = new JObject
-                                    {
-                                        { "playerid", item5.Id },
-                                        { "playerguid", key },
-                                        { "playername", item5.GetValue<string>("namePlayer") }
-                                    };
-                                    }
-                                    i6++;
-                                }
-
-
-
-
-                            }
-
-
-
-                            if (item4.ContentType.Alias == "Matches")
-                            {                 //if matches get selected players and compare
-                                foreach (var item6 in matches)
-                                {
-                                    var playerpick = item6.GetValue<string>("playerPicker");
-                                    string[] tokens = playerpick.Split(',');
-                                    List<string> token = new List<string> { };
-                                    foreach (var item7 in tokens)
-                                    {
-                                        token.Add(tokens[i5].Replace("umb://document/", ""));
-                                        i5++;
-                                    }
-                                    obj["sport" + i]["clubs"]["club" + i2]["teams"]["team" + i3]["matches"]["match" + i4] = new JObject
-                                    {
-                                                      { "startDate", item6.GetValue<DateTime>("startDate") },
-                                        { "endDate", item6.GetValue<DateTime>("endDate") },
-                                        {"players" ,  new JObject()}
-
-                                    };
-                                    //compare start
-                                    // objplayer jsonobject
-                                    // token list
-                                    //var hij = 0;
-
-                                    //foreach something in objplayer
-                                    //get player guid 
-                                    //compare to token if equal
-                                    //push other values to obj
-                                    foreach (var item8 in objplayer)
-                                    {
-
-                                        var playerguid = item8.Value["playerguid"].ToString();
-                                        if (token.Contains(playerguid))
-                                        {
-                                            result.Name = playerguid;
-                                            obj["sport" + i]["clubs"]["club" + i2]["teams"]["team" + i3]["matches"]["match" + i4]["players"]["player" + i7] = new JObject
-                                            {
-
-                                                    { "playerid", item8.Value["playerid"].ToString() },
-                                                     { "playername", item8.Value["playername"].ToString() }
-
-                                            };
-                                        }
-                                        i7++;
-
-                                    }
-                                    //bool result1 = root.equals(root2);
-                                    //int comparison = root.compareto(root2);
-                                    //result1 = root.equals(root2, stringcomparison.ordinal);
-                                    //if (result1 == true)
-                                    //{
-                                    //    hij = result.id;
-                                    //}
-
-                                    //var smt = cs.getbyid(hij);
-                                    //compare end
-
-                                    i4++;
-                                }
-
-                            }
-
-
-                        }
-
-                        i3++;
-                    }
-
-                    i2++;
-                }
-
-                i++;
-            }
-
-            var output = JsonConvert.SerializeObject(obj);
-
-
-
-            return output;
-
-
-        }
-      public string getpicture(IContent page, string property)
+        public string getpicture(IContent page, string property)
         {
             var umbHelper = new UmbracoHelper(UmbracoContext.Current);
             var j2 = page.GetValue<Udi>(property);
@@ -216,8 +26,8 @@ namespace manofthematch.Core.Controllers.WebAPI
             var k2 = umbHelper.Media(smt2);
             return k2.Url;
         }
-        [HttpGet]
-        public SingleClub GetSingleClub(int clubId)
+        [HttpGet] // /umbraco/api/PostsApi/getsingleclub?clubId=1085
+        public SingleClub GetSingleClub(int clubId)    
         {
             var umbHelper = new UmbracoHelper(UmbracoContext.Current);
             var cs = Services.ContentService;
@@ -232,6 +42,7 @@ namespace manofthematch.Core.Controllers.WebAPI
             c.Sponsor = (club.GetValue("sponsorPick") != null) ? umbraco.library.GetPreValueAsString(int.Parse(club.GetValue("sponsorPick").ToString())) : "";
             c.clubPic = getpicture(club, "clublogo");
             c.stadiumPic = getpicture(club, "stadiumPic");
+            c.HomeCity = (club.GetValue("homeCity") != null) ? club.GetValue("homeCity").ToString() : "";
             if (teams != null)
             {
                 foreach (var team in teams)
@@ -239,7 +50,7 @@ namespace manofthematch.Core.Controllers.WebAPI
                     var t = new Team();
                     t.teamId = team.Id;
                     t.teamName = (team.GetValue("nameTeam") != null)? team.GetValue("nameTeam").ToString(): "";
-                   
+                    t.highestT = GetHighestTrophies(team.Id);
                     List<Match> matchList = new List<Match>();
                     List<Player> playerList = new List<Player>();
                    
@@ -256,6 +67,7 @@ namespace manofthematch.Core.Controllers.WebAPI
                             p.playerName = (player.GetValue("namePlayer") != null) ? player.GetValue("namePlayer").ToString() : "";
                             var playerGuid = player.Key.ToString();
                             p.playerGuid = playerGuid.Replace("-", string.Empty);
+                            p.Trophies = player.GetValue<int>("trophiesWon");
                             playerList.Add(p);
                         }
 
@@ -270,8 +82,11 @@ namespace manofthematch.Core.Controllers.WebAPI
                             m.matchName = (match.GetValue("matchName") != null) ? match.GetValue("matchName").ToString() : ""; ;
                             //Format DateTime
                             m.startDate = match.GetValue<DateTime>("startDate");
+                            m.EndDate = match.GetValue<DateTime>("endDate");
+                            m.opponent = match.GetValue<string>("opponentMatch");
                             //location part
-                           
+                            m.winner = match.GetValue<int>("matchWinner");
+                            
                             var location = match.GetValue("locationPost").ToString();
                             string[] tok = location.Split(new string[] { "\"datum\": \"" }, StringSplitOptions.None);
                             string[] tok2 = tok[1].Split(new string[] { "\"\r\n  }\r\n" }, StringSplitOptions.None);
@@ -295,6 +110,7 @@ namespace manofthematch.Core.Controllers.WebAPI
                                     var playerExist = playerList.Find(x => x.playerGuid == player);
 
                                     var p = new Player();
+                                    p.Trophies = playerExist.Trophies;
                                     p.playerId = playerExist.playerId;
                                     p.playerName = playerExist.playerName;
                                     p.playerGuid = playerExist.playerGuid;
@@ -346,29 +162,10 @@ namespace manofthematch.Core.Controllers.WebAPI
             }
             return clubList;
         }
-        [HttpGet] 
-        public Club GetClub(int sportsId)
-        {
-            var cs = Services.ContentService;
-            Club clubList = new Club();
-                var content = cs.GetById(sportsId).Children();
-                foreach (var club in content)
-                {
-                    var c = new Club();
-                    clubList.clubName = (club.GetValue("clubName") != null) ? club.GetValue("clubName").ToString() : "";
-                clubList.Sponsor = (club.GetValue("sponsorPick") != null) ? umbraco.library.GetPreValueAsString(int.Parse(club.GetValue("sponsorPick").ToString())) : "";
-                clubList.clubPic = getpicture(club, "clublogo");
-                clubList.stadiumPic = getpicture(club, "stadiumPic");
-                clubList.clubId = club.Id;
-                clubList.Homecity = (club.GetValue("homeCity") != null) ? club.GetValue("homeCity").ToString() : "";
-                   
-                }
-            
-            return clubList;
-        }
+     
         //  get all matches club id match id, club logo,club name, end date, start date, opponent, location
-        [HttpGet] 
-        public List<allmatches> Getmatches([FromUri] int[] sportids)
+        [HttpGet]  // add match winner
+        public List<allmatches> Getmatches([FromUri] int[] sportids) // /umbraco/api/PostsApi/Getmatches?sportids=1084&sportids=1093
         {
             var cs = Services.ContentService;
             List<allmatches> matchlist = new List<allmatches>();
@@ -378,44 +175,40 @@ namespace manofthematch.Core.Controllers.WebAPI
                 var content = cs.GetById(sportid).Children();
                 foreach (var club1 in content)
                 {
-                    var c = new allmatches();
+                   
                     //var clubs = GetClub(club1.Id);
                     var club = GetSingleClub(club1.Id);
-                    c.clubid = club.clubId;
-                    c.clublogo = club.clubPic;
-                    c.clubname = club.clubName;
-                    c.matches = new List<Match>();
+                  
                     foreach (var item in club.teams)
                     {
 
                         foreach (var match in item.matches)
                         {
                           
-                                var matche = new Match();
+                                var matche = new allmatches();
                                 matche.matchId = match.matchId;
                                 matche.matchName = match.matchName;
                                 matche.location = match.location;
                                 matche.startDate = match.startDate;
-                                matche.players = match.players;
-                                c.matches.Add(matche);
-                            
+                                matche.opponent = match.opponent;
+                                matche.info = new List<allmatchesinfo>();
+                                var info = new allmatchesinfo();
+                                info.clubid = club.clubId;
+                                info.clublogo = club.clubPic;
+                                info.clubname = club.clubName;
+                                info.teamId = item.teamId;
+                                info.teamName = item.teamName;
+                                info.players = match.players;
+                                matche.info.Add(info);
+                                matchlist.Add(matche);
+
                         }
                     }
 
 
-                    matchlist.Add(c);
+                  
                 }
-                //foreach (var club in content)
-                //{
-                //    var c = new Club();
-                //    c.clubName = (club.GetValue("clubName") != null) ? club.GetValue("clubName").ToString() : "";
-                //    c.Sponsor = (club.GetValue("sponsorPick") != null) ? umbraco.library.GetPreValueAsString(int.Parse(club.GetValue("sponsorPick").ToString())) : "";
-                //    c.clubPic = getpicture(club, "clublogo");
-                //    c.stadiumPic = getpicture(club, "stadiumPic");
-                //    c.clubId = club.Id;
-                //    c.Homecity = (club.GetValue("homeCity") != null) ? club.GetValue("homeCity").ToString() : "";
-                //    clubList.Add(c);
-                //}
+               
             }
             return matchlist;
         }
@@ -437,6 +230,48 @@ namespace manofthematch.Core.Controllers.WebAPI
             }
 
             return clubList;
+        }
+
+        public Player GetPlayer (int Playerid) // /umbraco/api/PostsApi/GetPlayer?PlayerId=1090
+        {
+            var play = new Player();
+            var cs = Services.ContentService;
+            var iplayer = cs.GetById(Playerid);
+            play.playerName = iplayer.GetValue<string>("namePlayer");
+            play.playerId = iplayer.Id;
+            play.Trophies = iplayer.GetValue<int>("trophiesWon");
+            return play;
+        }
+        public Player GetHighestTrophies (int teamid) // /umbraco/api/PostsApi/GetHighestTrophies?teamid=1086
+        {
+            var cs = Services.ContentService;
+            List<Player> playerList = new List<Player>();
+            Player last = new Player();
+            try
+            {
+                var players = cs.GetById(teamid).Descendants().Where(p => p.ContentType.Alias.Equals("playerItem"));
+
+                if (players != null)
+                {
+                    foreach (var player in players)
+                    {
+                        var p = new Player();
+                        p.playerId = player.Id;
+                        p.playerName = (player.GetValue("namePlayer") != null) ? player.GetValue("namePlayer").ToString() : "";
+                        p.Trophies = player.GetValue<int>("trophiesWon");
+
+                        playerList.Add(p);
+                    }
+                    playerList = playerList.OrderBy(x => x.Trophies).ToList();
+                    last = playerList.Last();
+                }
+            }
+            catch
+            {
+
+            }
+            //team id? club id?
+            return last;
         }
 
         //umbraco/oauth/token
@@ -471,8 +306,65 @@ namespace manofthematch.Core.Controllers.WebAPI
             var smth = contentService.SaveAndPublishWithStatus(content);
             return smth;
         }
-        //reset the players  property to match motm 
-        //end date for a match
+
+        [Umbraco.Web.WebApi.UmbracoAuthorize]
+        [HttpPost] // /umbraco/api/PostsApi/Pickwinner?MatchId=1088        finds winner from match id, deletes scores, gives award to highest, assigns winner id to match
+        public object PickWinner(int MatchId)
+        {
+          
+            var cs =Services.ContentService;
+            var content = cs.GetAncestors(MatchId);
+            List<motmwinner> matchlist = new List<motmwinner>();
+            var newlist = matchlist;
+            motmwinner last = new motmwinner();
+            foreach (var item in content)
+            {
+                if (item.ContentType.Alias == "club")
+                {
+                    var club = GetSingleClub(item.Id);
+                    foreach (var item1 in club.teams)
+                    {
+
+                        foreach (var match in item1.matches)
+                        {
+                            if (match.matchId == MatchId)
+                            {
+                                if (match.winner == 0)
+                                {
+                                    foreach (var player in match.players)
+                                    {
+                                        var e = new motmwinner();
+                                        var iplayer = cs.GetById(player.playerId);
+                                        e.scorenumb = iplayer.GetValue<int>("votingScore");
+                                        e.Id = iplayer.Id;
+                                        e.Name = iplayer.GetValue<string>("namePlayer");
+                                        matchlist.Add(e);
+                                        iplayer.SetValue("votingScore", 0);
+                                        cs.SaveAndPublishWithStatus(iplayer);
+                                    }
+                                    newlist = matchlist.OrderBy(x => x.scorenumb).ToList();
+                                    last = newlist.Last();
+                                    var winner = cs.GetById(last.Id);
+                                    var trophy = winner.GetValue<int>("trophiesWon");
+                                    var matchwin = cs.GetById(MatchId);
+                                    matchwin.SetValue("matchWinner", last.Id);
+                                    winner.SetValue("trophiesWon", trophy = trophy + 1);
+                                    cs.SaveAndPublishWithStatus(winner);
+                                    cs.SaveAndPublishWithStatus(matchwin);
+                                }
+                                else
+                                {
+                                    last.Name = "already has a winner";
+                                }
+                            }
+                        }
+                    }
+                }
+                }
+
+            return last;
+        }
+     
         //models for API reguests
         // - - - - - - - - - - - -
         
@@ -480,6 +372,7 @@ namespace manofthematch.Core.Controllers.WebAPI
         {
             public string clubName { set; get; }
             public int clubId { set; get; }
+            public string HomeCity { set; get; }
             public string clubPic { set; get; }
             public string stadiumPic { set; get; }
             public object Sponsor { set; get; }
@@ -491,6 +384,7 @@ namespace manofthematch.Core.Controllers.WebAPI
         {
             public string teamName { set; get; }
             public int teamId { set; get; }
+            public Player highestT { set; get; }
             public List<Match> matches { set; get; }
             public List<Player> players { set; get; }
         }
@@ -498,23 +392,32 @@ namespace manofthematch.Core.Controllers.WebAPI
 
         public class allmatches
         {
+            public int matchId { set; get; }
+            public string matchName { set; get; }
+            public DateTime startDate { set; get; }
+            public DateTime endDate { set; get; }
+            public string[] location { set; get; }
+            public string opponent { set; get; }
+            public List<allmatchesinfo> info { set; get; }
+        }
+        public class allmatchesinfo
+        {
+            public string teamName { set; get; }
+            public int teamId { set; get; }
             public int clubid { set; get; }
             public string clublogo { set; get; }
             public string clubname { set; get; }
-            public List<Match> matches { set; get; }
-            //public string opponent { set; get; }
-           
-            //public List<string> players { set; get; }
-
-
+            public List<Player> players { set; get; }
         }
         public class Match
         {
             public int matchId { set; get; }
             public string matchName { set; get; }
             public DateTime startDate { set; get; }
+            public DateTime EndDate { set; get; }
             public string[] location { set; get; }
-            //public string opponent { set; get; }
+            public string opponent { set; get; }
+            public int winner { set; get; }
             public List<Player> players { set; get; }
             //public List<string> players { set; get; }
 
@@ -526,6 +429,7 @@ namespace manofthematch.Core.Controllers.WebAPI
             public string playerName { set; get; }
             public int playerId { set; get; }
             public string playerGuid { set; get; }
+            public int Trophies { set; get; }
         }
 
 
@@ -553,74 +457,11 @@ namespace manofthematch.Core.Controllers.WebAPI
             public string Opponent { set; get; }
         }
 
-        public class result
+        public class motmwinner
         {
             public int Id { get; set; }
-            public string key { get; set; }
-            public object Name { get; set; }
+            public string Name { get; set; }
+            public int scorenumb { get; set; }
         }
     }
 }
-//example place
-
-//nesting content
-//obj.key2 = "value2";
-//obj.key1 = new JObject
-//{
-//    {"key3", "asdaddd" }
-//};
-//obj.key1.key3 = new JObject
-//{
-//    {"key4", "dddddd" }
-//};
-//result.Name = item.GetValue("imagepost");
-
-
-//getting images
-//var j = item.GetValue<Udi>("imagepost");
-//var smt = Umbraco.GetIdForUdi(j);
-//var umbHelper = new UmbracoHelper(UmbracoContext.Current);
-//var k = umbHelper.Media(smt);
-//result.Name = k.Url;
-
-//looping children of sports node
-//foreach (var item in content)
-//{   
-//    var j 
-//obj.key = j;
-
-//}
-
-//get the players from player picker
-//make the selected players neat, egzample "8676e6d1b9134bc3823ea5242f5d63e3"
-//var j = content.GetValue<string>("playerpicker");
-
-//string[] tokens = j.Split(',');
-//var token = tokens[1].Replace("umb://document/","");
-
-
-////get all players
-//var temp = cs.GetChildren(1088);
-
-//foreach (var item in temp)
-//{
-//    var id = item.Id;
-//    var key = item.Key.ToString();
-//    key = key.Replace("-", "");
-//    result.Id = id;
-//    result.key = key;
-//}
-
-//var hij = 0;           
-//var root = token;
-//var root2 = result.key;
-
-//bool result1 = root.Equals(root2);
-//int comparison = root.CompareTo(root2);
-//result1 = root.Equals(root2, StringComparison.Ordinal);
-//if (result1 == true)
-//{
-//    hij = result.Id;
-//}
-
-//var smt = cs.GetById(hij);
