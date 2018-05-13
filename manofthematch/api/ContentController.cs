@@ -12,7 +12,7 @@ using Umbraco.Core;
 using Umbraco.Web;
 using umbraco;
 using Terratype.Models;
- // add opponent logo in match documents
+
 namespace manofthematch.Core.Controllers.WebAPI
 {
     [Route("api/[controller]")]
@@ -27,18 +27,18 @@ namespace manofthematch.Core.Controllers.WebAPI
             return k2.Url;
         }
         [HttpGet] // /umbraco/api/PostsApi/getsingleclub?clubId=1085
-        public SingleClub GetSingleClub(int clubId)    
+        public SingleClub GetSingleClub(int clubId)
         {
             var umbHelper = new UmbracoHelper(UmbracoContext.Current);
             var cs = Services.ContentService;
             var club = cs.GetById(clubId);
             var teams = cs.GetById(clubId).Children().Where(t => t.ContentType.Alias.Equals("clubItem"));
-            List<Team> teamList = new List<Team>();             
-           
+            List<Team> teamList = new List<Team>();
+
             var c = new SingleClub();
             c.clubId = club.Id;
-            c.clubName = (club.GetValue("clubName") != null) ? club.GetValue("clubName").ToString() : ""; 
-            c.clubabout = (club.GetValue("aboutclub") != null) ? club.GetValue("aboutclub").ToString() : ""; 
+            c.clubName = (club.GetValue("clubName") != null) ? club.GetValue("clubName").ToString() : "";
+            c.clubabout = (club.GetValue("aboutclub") != null) ? club.GetValue("aboutclub").ToString() : "";
             c.Sponsor = (club.GetValue("sponsorPick") != null) ? umbraco.library.GetPreValueAsString(int.Parse(club.GetValue("sponsorPick").ToString())) : "";
             c.clubPic = getpicture(club, "clublogo");
             c.stadiumPic = getpicture(club, "stadiumPic");
@@ -49,11 +49,11 @@ namespace manofthematch.Core.Controllers.WebAPI
                 {
                     var t = new Team();
                     t.teamId = team.Id;
-                    t.teamName = (team.GetValue("nameTeam") != null)? team.GetValue("nameTeam").ToString(): "";
+                    t.teamName = (team.GetValue("nameTeam") != null) ? team.GetValue("nameTeam").ToString() : "";
                     t.highestT = GetHighestTrophies(team.Id);
                     List<Match> matchList = new List<Match>();
                     List<Player> playerList = new List<Player>();
-                   
+
 
                     var matches = cs.GetById(team.Id).Descendants().Where(m => m.ContentType.Alias.Equals("matchItem"));
                     var players = cs.GetById(team.Id).Descendants().Where(p => p.ContentType.Alias.Equals("playerItem"));
@@ -68,6 +68,8 @@ namespace manofthematch.Core.Controllers.WebAPI
                             var playerGuid = player.Key.ToString();
                             p.playerGuid = playerGuid.Replace("-", string.Empty);
                             p.Trophies = player.GetValue<int>("trophiesWon");
+                            p.PlayerNumber = player.GetValue<int>("playerNumber");
+                            p.PlayerPic = getpicture(player, "playerPicture");
                             playerList.Add(p);
                         }
 
@@ -79,21 +81,26 @@ namespace manofthematch.Core.Controllers.WebAPI
                         {
                             var m = new Match();
                             m.matchId = match.Id;
-                            m.matchName = (match.GetValue("matchName") != null) ? match.GetValue("matchName").ToString() : ""; ;
+                            m.matchName = (match.GetValue("matchName") != null) ? match.GetValue("matchName").ToString() : "";
                             //Format DateTime
                             m.startDate = match.GetValue<DateTime>("startDate");
                             m.EndDate = match.GetValue<DateTime>("endDate");
                             m.opponent = match.GetValue<string>("opponentMatch");
                             //location part
-                            m.winner = match.GetValue<int>("matchWinner");
-                            
+                            var win = match.GetValue<int>("matchWinner");
+                            if (win != 0)
+                            {
+                                m.winner = GetPlayer(win);
+                            }
+                                m.opponentLogo = getpicture(match, "opponentLogo");
+
                             var location = match.GetValue("locationPost").ToString();
                             string[] tok = location.Split(new string[] { "\"datum\": \"" }, StringSplitOptions.None);
                             string[] tok2 = tok[1].Split(new string[] { "\"\r\n  }\r\n" }, StringSplitOptions.None);
                             string[] gps = tok2[0].Split(',');
                             m.location = gps;
                             var playerpick = (match.GetValue<string>("playerPicker") != null) ? match.GetValue<string>("playerPicker").ToString() : "";
-                            
+
                             string[] tokens = playerpick.Split(',');
                             List<string> token = new List<string> { };
                             foreach (var player in tokens)
@@ -101,9 +108,9 @@ namespace manofthematch.Core.Controllers.WebAPI
                                 var player2 = player.Replace("umb://document/", "");
                                 token.Add(player2);
                             }
-                         
+
                             List<Player> matchPlayersList = new List<Player>();
-                            if (token[0] !=  "" )
+                            if (token[0] != "")
                             {
                                 foreach (var player in token)
                                 {
@@ -113,7 +120,8 @@ namespace manofthematch.Core.Controllers.WebAPI
                                     p.Trophies = playerExist.Trophies;
                                     p.playerId = playerExist.playerId;
                                     p.playerName = playerExist.playerName;
-                                    p.playerGuid = playerExist.playerGuid;
+                                    p.PlayerNumber = playerExist.PlayerNumber;
+                                    p.PlayerPic = playerExist.PlayerPic;
                                     matchPlayersList.Add(p);
 
 
@@ -135,11 +143,12 @@ namespace manofthematch.Core.Controllers.WebAPI
             c.teams = teamList;
             return c;
         }
-       
+
 
         //Only show clubs from specific sports
         //getClubs?sportsIds=1084&sportsIds=1093
-        [HttpGet] // name clubhomecity picture, stadium picture id
+        
+        [HttpGet]
         public List<Club> GetClubs([FromUri] int[] sportsIds)
         {
             var cs = Services.ContentService;
@@ -162,9 +171,10 @@ namespace manofthematch.Core.Controllers.WebAPI
             }
             return clubList;
         }
-     
-        //  get all matches club id match id, club logo,club name, end date, start date, opponent, location
-        [HttpGet]  // add match winner
+
+      
+       
+        [HttpGet]  
         public List<allmatches> Getmatches([FromUri] int[] sportids) // /umbraco/api/PostsApi/Getmatches?sportids=1084&sportids=1093
         {
             var cs = Services.ContentService;
@@ -175,40 +185,42 @@ namespace manofthematch.Core.Controllers.WebAPI
                 var content = cs.GetById(sportid).Children();
                 foreach (var club1 in content)
                 {
-                   
+
                     //var clubs = GetClub(club1.Id);
                     var club = GetSingleClub(club1.Id);
-                  
+
                     foreach (var item in club.teams)
                     {
 
                         foreach (var match in item.matches)
                         {
-                          
-                                var matche = new allmatches();
-                                matche.matchId = match.matchId;
-                                matche.matchName = match.matchName;
-                                matche.location = match.location;
-                                matche.startDate = match.startDate;
-                                matche.opponent = match.opponent;
-                                matche.info = new List<allmatchesinfo>();
-                                var info = new allmatchesinfo();
-                                info.clubid = club.clubId;
-                                info.clublogo = club.clubPic;
-                                info.clubname = club.clubName;
-                                info.teamId = item.teamId;
-                                info.teamName = item.teamName;
-                                info.players = match.players;
-                                matche.info.Add(info);
-                                matchlist.Add(matche);
+
+                            var matche = new allmatches();
+                            matche.matchId = match.matchId;
+                            matche.matchName = match.matchName;
+                            matche.location = match.location;
+                            matche.startDate = match.startDate;
+                            matche.opponent = match.opponent;
+                            matche.opponentLogo = match.opponentLogo;
+                            matche.winner = match.winner;
+                            matche.info = new List<allmatchesinfo>();
+                            var info = new allmatchesinfo();
+                            info.clubid = club.clubId;
+                            info.clublogo = club.clubPic;
+                            info.clubname = club.clubName;
+                            info.teamId = item.teamId;
+                            info.teamName = item.teamName;
+                            info.players = match.players;
+                            matche.info.Add(info);
+                            matchlist.Add(matche);
 
                         }
                     }
 
 
-                  
+
                 }
-               
+
             }
             return matchlist;
         }
@@ -232,17 +244,18 @@ namespace manofthematch.Core.Controllers.WebAPI
             return clubList;
         }
 
-        public Player GetPlayer (int Playerid) // /umbraco/api/PostsApi/GetPlayer?PlayerId=1090
+        public Player GetPlayer(int Playerid) // /umbraco/api/PostsApi/GetPlayer?PlayerId=1090
         {
             var play = new Player();
             var cs = Services.ContentService;
             var iplayer = cs.GetById(Playerid);
-            play.playerName = iplayer.GetValue<string>("namePlayer");
+            play.playerName = (iplayer.GetValue<string>("namePlayer") != null) ? iplayer.GetValue("namePlayer").ToString() : "";
             play.playerId = iplayer.Id;
             play.Trophies = iplayer.GetValue<int>("trophiesWon");
+            play.PlayerPic = getpicture(iplayer, "playerPicture");
             return play;
         }
-        public Player GetHighestTrophies (int teamid) // /umbraco/api/PostsApi/GetHighestTrophies?teamid=1086
+        public Player GetHighestTrophies(int teamid) // /umbraco/api/PostsApi/GetHighestTrophies?teamid=1086
         {
             var cs = Services.ContentService;
             List<Player> playerList = new List<Player>();
@@ -259,6 +272,7 @@ namespace manofthematch.Core.Controllers.WebAPI
                         p.playerId = player.Id;
                         p.playerName = (player.GetValue("namePlayer") != null) ? player.GetValue("namePlayer").ToString() : "";
                         p.Trophies = player.GetValue<int>("trophiesWon");
+                        p.PlayerPic = getpicture(player, "playerPicture");
 
                         playerList.Add(p);
                     }
@@ -311,8 +325,8 @@ namespace manofthematch.Core.Controllers.WebAPI
         [HttpPost] // /umbraco/api/PostsApi/Pickwinner?MatchId=1088        finds winner from match id, deletes scores, gives award to highest, assigns winner id to match
         public object PickWinner(int MatchId)
         {
-          
-            var cs =Services.ContentService;
+
+            var cs = Services.ContentService;
             var content = cs.GetAncestors(MatchId);
             List<motmwinner> matchlist = new List<motmwinner>();
             var newlist = matchlist;
@@ -329,7 +343,7 @@ namespace manofthematch.Core.Controllers.WebAPI
                         {
                             if (match.matchId == MatchId)
                             {
-                                if (match.winner == 0)
+                                if (match.winner == null)
                                 {
                                     foreach (var player in match.players)
                                     {
@@ -360,14 +374,14 @@ namespace manofthematch.Core.Controllers.WebAPI
                         }
                     }
                 }
-                }
+            }
 
             return last;
         }
-     
+
         //models for API reguests
         // - - - - - - - - - - - -
-        
+
         public class SingleClub
         {
             public string clubName { set; get; }
@@ -398,6 +412,8 @@ namespace manofthematch.Core.Controllers.WebAPI
             public DateTime endDate { set; get; }
             public string[] location { set; get; }
             public string opponent { set; get; }
+            public string opponentLogo { set; get; }
+            public Player winner { set; get; }
             public List<allmatchesinfo> info { set; get; }
         }
         public class allmatchesinfo
@@ -417,7 +433,8 @@ namespace manofthematch.Core.Controllers.WebAPI
             public DateTime EndDate { set; get; }
             public string[] location { set; get; }
             public string opponent { set; get; }
-            public int winner { set; get; }
+            public string opponentLogo { set; get; }
+            public Player winner { set; get; }
             public List<Player> players { set; get; }
             //public List<string> players { set; get; }
 
@@ -429,6 +446,8 @@ namespace manofthematch.Core.Controllers.WebAPI
             public string playerName { set; get; }
             public int playerId { set; get; }
             public string playerGuid { set; get; }
+            public int PlayerNumber { set; get; }
+            public string PlayerPic { set; get; }
             public int Trophies { set; get; }
         }
 
@@ -436,7 +455,7 @@ namespace manofthematch.Core.Controllers.WebAPI
         //Displaying all clubs
         public class Club
         {
-        
+
             public string clubName { set; get; }
             public int clubId { set; get; }
             public string clubPic { set; get; }

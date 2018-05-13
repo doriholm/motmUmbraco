@@ -8,7 +8,7 @@ using  Umbraco.Web;
 using  Umbraco.ModelsBuilder;
 using  Umbraco.ModelsBuilder.Umbraco;
 [assembly: PureLiveAssembly]
-[assembly:ModelsBuilderAssembly(PureLive = true, SourceHash = "1f10605679b93fc4")]
+[assembly:ModelsBuilderAssembly(PureLive = true, SourceHash = "3a2966a3bae113b1")]
 [assembly:System.Reflection.AssemblyVersion("0.0.0.1")]
 
 
@@ -321,6 +321,15 @@ namespace Umbraco.Web.PublishedContentModels
 		}
 
 		///<summary>
+		/// Opponent Logo
+		///</summary>
+		[ImplementPropertyType("opponentLogo")]
+		public IPublishedContent OpponentLogo
+		{
+			get { return this.GetPropertyValue<IPublishedContent>("opponentLogo"); }
+		}
+
+		///<summary>
 		/// Opponent
 		///</summary>
 		[ImplementPropertyType("opponentMatch")]
@@ -380,6 +389,24 @@ namespace Umbraco.Web.PublishedContentModels
 		public string NamePlayer
 		{
 			get { return this.GetPropertyValue<string>("namePlayer"); }
+		}
+
+		///<summary>
+		/// Player number
+		///</summary>
+		[ImplementPropertyType("playerNumber")]
+		public int PlayerNumber
+		{
+			get { return this.GetPropertyValue<int>("playerNumber"); }
+		}
+
+		///<summary>
+		/// Player Picture
+		///</summary>
+		[ImplementPropertyType("playerPicture")]
+		public IPublishedContent PlayerPicture
+		{
+			get { return this.GetPropertyValue<IPublishedContent>("playerPicture"); }
 		}
 
 		///<summary>
