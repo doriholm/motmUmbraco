@@ -194,25 +194,26 @@ namespace manofthematch.Core.Controllers.WebAPI
 
                         foreach (var match in item.matches)
                         {
-
-                            var matche = new allmatches();
-                            matche.matchId = match.matchId;
-                            matche.matchName = match.matchName;
-                            matche.location = match.location;
-                            matche.startDate = match.startDate;
-                            matche.opponent = match.opponent;
-                            matche.opponentLogo = match.opponentLogo;
-                            matche.winner = match.winner;
-                            matche.info = new List<allmatchesinfo>();
-                            var info = new allmatchesinfo();
-                            info.clubid = club.clubId;
-                            info.clublogo = club.clubPic;
-                            info.clubname = club.clubName;
-                            info.teamId = item.teamId;
-                            info.teamName = item.teamName;
-                            info.players = match.players;
-                            matche.info.Add(info);
-                            matchlist.Add(matche);
+                            if (match.winner == null)
+                            {
+                                var matche = new allmatches();
+                                matche.matchId = match.matchId;
+                                matche.matchName = match.matchName;
+                                matche.location = match.location;
+                                matche.startDate = match.startDate;
+                                matche.opponent = match.opponent;
+                                matche.opponentLogo = match.opponentLogo;
+                                matche.info = new List<allmatchesinfo>();
+                                var info = new allmatchesinfo();
+                                info.clubid = club.clubId;
+                                info.clublogo = club.clubPic;
+                                info.clubname = club.clubName;
+                                info.teamId = item.teamId;
+                                info.teamName = item.teamName;
+                                info.players = match.players;
+                                matche.info.Add(info);
+                                matchlist.Add(matche);
+                            }
 
                         }
                     }
