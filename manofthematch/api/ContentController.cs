@@ -201,6 +201,7 @@ namespace manofthematch.Core.Controllers.WebAPI
                                 matche.matchName = match.matchName;
                                 matche.location = match.location;
                                 matche.startDate = match.startDate;
+                                matche.endDate = match.EndDate;
                                 matche.opponent = match.opponent;
                                 matche.opponentLogo = match.opponentLogo;
                                 matche.info = new List<allmatchesinfo>();
@@ -314,11 +315,17 @@ namespace manofthematch.Core.Controllers.WebAPI
         {
             var contentService = ApplicationContext.Current.Services.ContentService;
             var content = contentService.GetById(PlayerId);
-            var item = content.GetValue<int>("votingScore");
+            var smth = false;
+            if (content != null)
+            {
+                var item = content.GetValue<int>("votingScore");
 
-            content.SetValue("votingScore", item = item + 1);
+                content.SetValue("votingScore", item = item + 1);
 
-            var smth = contentService.SaveAndPublishWithStatus(content);
+                var temp = contentService.SaveAndPublishWithStatus(content);
+                smth = temp.Success;
+            }
+           
             return smth;
         }
 
